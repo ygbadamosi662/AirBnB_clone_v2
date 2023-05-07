@@ -1,35 +1,25 @@
 #!/usr/bin/env bash
 # Sets up a web server for deployment of web_static.
 
-apt-get update
-apt-get install -y nginx
+if [ ! -x "$(command -v nginx)" ]; then
+    apt-get update
+    apt-get -y install nginx
+fi
 
-mkdir -p /data/web_static/releases/test/
-mkdir -p /data/web_static/shared/
-echo "Holberton School" > /data/web_static/releases/test/index.html
-ln -sf /data/web_static/releases/test/ /data/web_static/current
+mkdir -p /data/web_static/releases/test
+mkdir -p /data/web_static/shared
+mkdir -p /data/web_static/current
 
-chown -R ubuntu /data/
-chgrp -R ubuntu /data/
+echo "Hello World" > /data/web_static/releases/test/index.html
 
-printf %s "server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-    add_header X-Served-By $HOSTNAME;
-    root   /var/www/html;
-    index  index.html index.htm;
-    location /hbnb_static {
-	alias /data/web_static/current;
-	index index.html index.htm;
-    }
-    location /redirect_me {
-	return 301 http://cuberule.com/;
-    }
-    error_page 404 /404.html;
-    location /404 {
-      root /var/www/html;
-      internal;
-    }
-}" > /etc/nginx/sites-available/default
+ln -sf /data/web_static/releases/test /data/web_static/current
 
-service nginx restart
+chown -R ubuntu:ubuntu /data/ && :
+
+if ! grep -q hbnb_static /etc/nginx/sites-available/default; then
+    sed -i '/^server {/a location /hbnb_static {\nalias /data/web_static/current/;\n}' /etc/nginx/sites-available/default
+fi
+
+service nginx restart && :
+
+exit 0
